@@ -6,7 +6,7 @@ target 'imu_test' do
   use_frameworks!
 
   # Pods for imu_test
-  pod 'Charts'
+  pod 'DGCharts'
   
   target 'imu_testTests' do
     inherit! :search_paths

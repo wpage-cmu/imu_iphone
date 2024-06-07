@@ -5,7 +5,7 @@
 //  Created by Justin Kwok Lam CHAN on 4/4/21.
 //
 
-import Charts
+import DGCharts
 import UIKit
 import CoreMotion
 
