@@ -107,10 +107,10 @@ class ViewController: UIViewController, ChartViewDelegate {
                 print ("A: \(text)")
                 
                 self.accel_fileHandle!.write(text.data(using: .utf8)!)
-                
-                 self.lineChartView.data?.append(ChartDataEntry(x: Double(counter), y: x) as! ChartDataSetProtocol)
-                 self.lineChartView.data?.append(ChartDataEntry(x: Double(counter), y: y) as! ChartDataSetProtocol)
-                 self.lineChartView.data?.append(ChartDataEntry(x: Double(counter), y: z) as! ChartDataSetProtocol)
+                 
+                  self.lineChartView.data?.appendEntry(ChartDataEntry(x: Double(counter), y: x), toDataSet: ChartData.Index(0))
+                 self.lineChartView.data?.appendEntry(ChartDataEntry(x: Double(counter), y: y), toDataSet: ChartData.Index(1))
+                 self.lineChartView.data?.appendEntry(ChartDataEntry(x: Double(counter), y: z), toDataSet: ChartData.Index(2))
                 
                 // refreshes the data in the graph
                 self.lineChartView.notifyDataSetChanged()
