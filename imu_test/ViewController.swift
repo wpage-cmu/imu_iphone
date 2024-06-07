@@ -42,14 +42,12 @@ class ViewController: UIViewController, ChartViewDelegate {
         ts=NSDate().timeIntervalSince1970
         label.text=String(format: "%f", ts)
         startAccelerometers()
-        startGyros()
         startButton.isEnabled = false
         stopButton.isEnabled = true
     }
     
     @IBAction func stopSensors(_ sender: Any) {
         stopAccels()
-        stopGyros()
         startButton.isEnabled = true
         stopButton.isEnabled = false
     }
@@ -60,10 +58,6 @@ class ViewController: UIViewController, ChartViewDelegate {
     var timer_accel:Timer?
     var accel_file_url:URL?
     var accel_fileHandle:FileHandle?
-    
-    var timer_gyro:Timer?
-    var gyro_file_url:URL?
-    var gyro_fileHandle:FileHandle?
     
     let xrange:Double = 500
     
@@ -132,47 +126,6 @@ class ViewController: UIViewController, ChartViewDelegate {
        }
     }
     
-    func startGyros() {
-       if motion.isGyroAvailable {
-          self.motion.gyroUpdateInterval = 1.0 / 60.0
-          self.motion.startGyroUpdates()
-        
-        do {
-            let file = "gyro_file_\(ts).txt"
-            if let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-                gyro_file_url = dir.appendingPathComponent(file)
-            }
-            
-            try "ts,x,y,z\n".write(to: gyro_file_url!, atomically: true, encoding: String.Encoding.utf8)
-
-            gyro_fileHandle = try FileHandle(forWritingTo: gyro_file_url!)
-            gyro_fileHandle!.seekToEndOfFile()
-        } catch {
-            print("Error writing to file \(error)")
-        }
-        
-          // Configure a timer to fetch the accelerometer data.
-          self.timer_gyro = Timer(fire: Date(), interval: (1.0/60.0),
-                 repeats: true, block: { (timer) in
-             // Get the gyro data.
-             if let data = self.motion.gyroData {
-                let x = data.rotationRate.x
-                let y = data.rotationRate.y
-                let z = data.rotationRate.z
-                
-                let timestamp = NSDate().timeIntervalSince1970
-                let text = "\(timestamp), \(x), \(y), \(z)\n"
-                print ("G: \(text)")
-                
-                self.gyro_fileHandle!.write(text.data(using: .utf8)!)
-             }
-          })
-
-          // Add the timer to the current run loop.
-          RunLoop.current.add(self.timer_gyro!, forMode: RunLoop.Mode.default)
-       }
-    }
-    
     func stopAccels() {
        if self.timer_accel != nil {
           self.timer_accel?.invalidate()
@@ -181,17 +134,6 @@ class ViewController: UIViewController, ChartViewDelegate {
           self.motion.stopAccelerometerUpdates()
         
            accel_fileHandle!.closeFile()
-       }
-    }
-    
-    func stopGyros() {
-       if self.timer_gyro != nil {
-          self.timer_gyro?.invalidate()
-          self.timer_gyro = nil
-
-          self.motion.stopGyroUpdates()
-          
-           gyro_fileHandle!.closeFile()
        }
     }
 }
