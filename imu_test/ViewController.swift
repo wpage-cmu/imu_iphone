@@ -17,6 +17,20 @@ class ViewController: UIViewController, ChartViewDelegate {
     @IBOutlet weak var label: UILabel!
     
     var ts: Double = 0
+    var magnitudeBuffer: [Double] = []
+    let bufferSize = 10
+    //var dcBias: Double = 0.0
+    
+    var previousMagnitude: Double = 0.0
+    var filteredMagnitude: Double = 0.0
+    let alpha: Double = 0.5  // Low-pass filter constant (can be tuned)
+    
+    var stepCount = 0
+    var threshold: Double = 1.1  // Set this based on your testing
+    var previousMovingAverage: Double = 0.0
+    var lastStepTimestamp: TimeInterval = 0.0
+    let stepDebounce: TimeInterval = 0.3  // 400 ms debounce
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -100,6 +114,75 @@ class ViewController: UIViewController, ChartViewDelegate {
                 let text = "\(timestamp), \(x), \(y), \(z)\n"
                 print ("A: \(text)")
                 
+                 
+                 // Calculate magnitude
+                 let magnitude = sqrt(x * x + y * y + z * z)
+                 
+                 // Apply low-pass filter
+                 filteredMagnitude = magnitude * (1 - alpha) + previousMagnitude * alpha
+                 previousMagnitude = filteredMagnitude
+                 
+                 // Update buffer
+                 if magnitudeBuffer.count >= bufferSize {
+                     magnitudeBuffer.removeFirst()  // Remove the oldest value
+                 }
+                 magnitudeBuffer.append(filteredMagnitude)  // Use filtered magnitude for moving average
+                 
+                 // Calculate moving average
+                 var movingAverage: Double = 0.0
+                 if magnitudeBuffer.count == bufferSize {
+                     movingAverage = magnitudeBuffer.reduce(0, +) / Double(bufferSize)
+                 } else {
+                     movingAverage = magnitudeBuffer.reduce(0, +) / Double(magnitudeBuffer.count)
+                 }
+                 
+                 DispatchQueue.main.async {
+                     self.label.text = "Steps: \(self.stepCount)"
+                 }
+                 
+                 // Step detection
+                 let currentTime = NSDate().timeIntervalSince1970
+                 //let adaptiveThreshold = max(threshold, movingAverage * 1)  // Increase threshold dynamically
+                 
+                 
+                 print("Moving Average: \(movingAverage), Threshold: \(threshold)")
+
+                 if movingAverage > threshold {
+                     print("Moving average exceeded threshold.")
+                     
+                     if previousMovingAverage < movingAverage {
+                         print("Previous moving average was lower.")
+                         
+                         if currentTime - lastStepTimestamp > stepDebounce {
+                             print("Debounce condition met.")
+                             stepCount += 1
+                             lastStepTimestamp = currentTime
+                             print("Step detected: \(stepCount)")
+                         } else {
+                             print("Debounce condition NOT met.")
+                         }
+                     } else {
+                         print("Previous moving average was not lower.")
+                     }
+                 } else {
+                     print("Moving average did not exceed threshold.")
+                 }
+                 if movingAverage > threshold && previousMovingAverage < movingAverage {
+                     if currentTime - lastStepTimestamp > stepDebounce {
+                         
+                         
+                         stepCount += 1
+                         lastStepTimestamp = currentTime
+                         
+                         DispatchQueue.main.async {
+                             self.label.text = "Steps: \(self.stepCount)"
+                         }
+                         
+                         print("Step detected: \(stepCount)")
+                     }
+                 }
+                 previousMovingAverage = movingAverage
+        
                 self.accel_fileHandle!.write(text.data(using: .utf8)!)
                  
                   self.lineChartView.data?.appendEntry(ChartDataEntry(x: Double(counter), y: x), toDataSet: ChartData.Index(0))
